@@ -1,0 +1,561 @@
+* {
+  box-sizing: border-box;
+  user-select: none;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+  background-size: 400% 400%;
+  animation: gradientBG 15s ease infinite;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Poppins', sans-serif;
+  color: #fff;
+  padding: 12px;
+}
+
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.game-container {
+  max-width: 680px;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 40px;
+  padding: 24px 24px 30px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 4px 16px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Sound + Extra Life + Leaderboard next to scoreboard */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.icon-btn {
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  min-width: unset;
+  padding: 0 !important;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+  transition: all 0.2s ease;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.icon-btn:hover {
+  background: rgba(255,255,255,0.22);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+}
+
+#muteButton.muted { opacity: 0.5; }
+#muteButton.muted::after { content: none; }
+
+.stats {
+  display: flex;
+  gap: 10px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px 16px;
+  border-radius: 60px;
+  box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.1);
+  flex-wrap: wrap;
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 1.1rem;
+}
+
+.stat span:first-child {
+  font-size: 1.2rem;
+}
+
+#coins { color: #facc15; font-weight: 700; text-shadow: 0 0 10px rgba(250, 204, 21, 0.6); }
+#time { min-width: 3.2rem; color: #6ee7b7; font-weight: 700; }
+#score { min-width: 3.8rem; color: #93c5fd; font-weight: 700; }
+#level { min-width: 2.5rem; color: #f9a8d4; font-weight: 700; }
+
+.combo-badge {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  padding: 8px 16px;
+  border-radius: 40px;
+  font-weight: 800;
+  font-size: 1.2rem;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4), inset 0 2px 4px rgba(255,255,255,0.4);
+  color: #fff;
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+}
+
+.combo-badge:hover {
+  transform: scale(1.05);
+}
+
+#comboDisplay { display: inline-block; text-align: center; }
+
+canvas {
+  display: block;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  max-width: 520px;
+  aspect-ratio: 1/1;
+  height: auto;
+  margin: 0;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 28px;
+  box-shadow: inset 0 4px 10px rgba(0,0,0,0.6), 0 8px 24px rgba(0,0,0,0.3);
+  border: 1px solid rgba(255,255,255,0.15);
+  cursor: pointer;
+  touch-action: none;
+}
+
+.action-bar {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 500px) {
+  .action-bar { gap: 8px; }
+  button { padding: 12px 18px; font-size: 1rem; }
+  .stats { gap: 10px; padding: 8px 16px; }
+}
+
+button {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 12px 24px;
+  border-radius: 60px;
+  font-weight: 600;
+  font-size: 1rem;
+  font-family: 'Inter', sans-serif;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  touch-action: manipulation;
+}
+
+button:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+button:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+button:disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.gameover-message {
+  text-align: center;
+  margin-top: 16px;
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: #fca5a5;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+  min-height: 2.2rem;
+  letter-spacing: 1px;
+  font-family: 'Inter', sans-serif;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+.footer-note { display: none; }
+
+/* Ad overlay */
+.ad-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.ad-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.ad-overlay.hidden {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.ad-content {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 32px;
+  padding: 40px 32px;
+  text-align: center;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255,255,255,0.2);
+  border: 1px solid rgba(255,255,255,0.1);
+  max-width: 360px;
+  width: 90vw;
+  transform: scale(0.9);
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.ad-overlay.show .ad-content {
+  transform: scale(1);
+}
+
+.ad-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 28px;
+  letter-spacing: 1px;
+}
+
+.progress-container {
+  width: 100%;
+  height: 14px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 10px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.5);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #60a5fa, #3b82f6, #2563eb);
+  border-radius: 10px;
+  width: 0%;
+  transition: width 0.1s linear;
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.6);
+}
+
+.ad-status {
+  color: #93c5fd;
+  font-size: 1rem;
+  font-weight: 500;
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── Play area: glass + canvas side by side ── */
+.play-area {
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
+  justify-content: center;
+  width: 100%;
+}
+
+/* ── Glass wrapper ── */
+.glass-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-shrink: 0;
+  width: 70px;
+  padding: 8px 0;
+}
+
+.glass-label {
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  color: rgba(255,255,255,0.6);
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.glass-pct {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #6ee7b7;
+  text-shadow: 0 0 10px rgba(110,231,183,0.6);
+  min-height: 1.4rem;
+  transition: color 0.3s;
+  text-align: center;
+}
+
+/* Outer glass shell */
+.glass-outer {
+  position: relative;
+  width: 48px;
+  flex: 1 1 auto;
+  min-height: 160px;
+  max-height: 340px;
+  background: rgba(255,255,255,0.06);
+  border: 2px solid rgba(255,255,255,0.35);
+  border-top: none;
+  border-radius: 0 0 22px 22px;
+  overflow: hidden;
+  box-shadow:
+    inset 2px 0 8px rgba(255,255,255,0.08),
+    inset -2px 0 8px rgba(0,0,0,0.2),
+    0 8px 24px rgba(0,0,0,0.4);
+}
+
+/* Liquid fill — grows from bottom */
+.glass-liquid {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 0%;
+  background: linear-gradient(180deg, #4ade80 0%, #16a34a 60%, #15803d 100%);
+  transition: height 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border-radius: 0 0 20px 20px;
+  overflow: hidden;
+}
+
+/* Wavy surface on top of liquid */
+.glass-surface {
+  position: absolute;
+  top: -6px;
+  left: -10%;
+  width: 120%;
+  height: 14px;
+  background: rgba(134,239,172,0.7);
+  border-radius: 50%;
+  animation: waveSurface 1.8s ease-in-out infinite;
+}
+
+@keyframes waveSurface {
+  0%, 100% { transform: translateX(0) scaleY(1); }
+  50%       { transform: translateX(6px) scaleY(1.3); }
+}
+
+/* Bubbles inside liquid */
+.glass-bubbles {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.35);
+  animation: riseUp linear infinite;
+}
+
+@keyframes riseUp {
+  0%   { transform: translateY(0) scale(1);   opacity: 0.7; }
+  100% { transform: translateY(-120px) scale(0.4); opacity: 0; }
+}
+
+/* Glass shine overlay */
+.glass-shine {
+  position: absolute;
+  top: 0; left: 6px;
+  width: 10px;
+  height: 100%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.22) 0%, transparent 100%);
+  border-radius: 4px;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Rim at top — visible open mouth of glass */
+.glass-rim-top {
+  position: absolute;
+  top: -2px; left: -4px;
+  width: calc(100% + 8px);
+  height: 8px;
+  background: rgba(255,255,255,0.3);
+  border-radius: 4px 4px 0 0;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-bottom: none;
+  z-index: 3;
+}
+
+/* Base under glass */
+.glass-base {
+  width: 60px;
+  height: 10px;
+  background: rgba(255,255,255,0.18);
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+  flex-shrink: 0;
+}
+
+.glass-goal {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: rgba(255,255,255,0.45);
+  text-align: center;
+}
+
+/* Glass full — golden glow */
+.glass-outer.full {
+  border-color: #facc15;
+  box-shadow:
+    0 0 20px rgba(250,204,21,0.7),
+    0 0 40px rgba(250,204,21,0.3),
+    inset 0 0 12px rgba(250,204,21,0.2);
+}
+
+.glass-liquid.full {
+  background: linear-gradient(180deg, #fde68a 0%, #f59e0b 60%, #d97706 100%);
+}
+
+/* Win / Lose overlay */
+.result-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10,20,40,0.85);
+  backdrop-filter: blur(14px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+}
+
+.result-overlay.show {
+  opacity: 1;
+  visibility: visible;
+}
+
+.result-box {
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 32px;
+  padding: 48px 40px;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.5);
+  transform: scale(0.85);
+  transition: transform 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+}
+
+.result-overlay.show .result-box {
+  transform: scale(1);
+}
+
+.result-icon { font-size: 4rem; margin-bottom: 12px; }
+
+.result-title {
+  font-size: 2.2rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+  margin-bottom: 8px;
+}
+
+.result-title.win  { color: #4ade80; text-shadow: 0 0 20px rgba(74,222,128,0.6); }
+.result-title.lose { color: #f87171; text-shadow: 0 0 20px rgba(248,113,113,0.6); }
+
+.result-sub {
+  font-size: 1.1rem;
+  color: rgba(255,255,255,0.7);
+  margin-bottom: 28px;
+}
+
+.result-btn {
+  background: linear-gradient(135deg, #4ade80, #16a34a);
+  border: none;
+  padding: 14px 36px;
+  border-radius: 60px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(74,222,128,0.4);
+  transition: transform 0.2s, box-shadow 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.result-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 28px rgba(74,222,128,0.5);
+}
+
+/* Responsive: stack on very small screens */
+@media (max-width: 480px) {
+  .game-container { padding: 16px 12px 20px; border-radius: 28px; }
+  .header { gap: 8px; padding-bottom: 12px; }
+  .header-actions { gap: 4px; }
+  .icon-btn { width: 36px; height: 36px; font-size: 1rem; }
+  .play-area { gap: 10px; }
+  .glass-wrap { width: 52px; }
+  .glass-outer { width: 38px; min-height: 120px; }
+  .glass-base { width: 48px; }
+  .glass-label, .glass-goal { font-size: 0.5rem; letter-spacing: 1px; }
+  .glass-pct { font-size: 0.85rem; }
+  .action-bar { gap: 10px; margin-top: 16px; }
+  button { padding: 10px 14px; font-size: 0.85rem; }
+  .stats { gap: 8px; padding: 6px 12px; }
+  .stat { font-size: 0.95rem; }
+  .stat span:first-child { font-size: 1rem; }
+  .combo-badge { padding: 6px 12px; font-size: 1rem; }
+}

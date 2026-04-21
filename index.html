@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+    <title>LIME PUZZLE</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800&family=Inter:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="style/stylesheet.css">
+</head>
+
+<body>
+    <div class="game-container">
+        <div class="header">
+            <div class="stats">
+                <div class="stat"><span>⏱️</span> <span id="time">60</span></div>
+                <div class="stat"><span>🍋</span> <span id="score">0</span></div>
+                <div class="stat"><span>🚀</span> <span id="level">1</span></div>
+                <div class="stat"><span>💰</span> <span id="coins">0</span></div>
+            </div>
+            <div class="header-actions">
+                <button id="muteButton" class="icon-btn" title="Sound">🔊</button>
+                <button id="adButton" class="icon-btn" title="Extra Life">🎁</button>
+                <button id="leaderButton" class="icon-btn" title="Leaderboard">🏆</button>
+            </div>
+            <div class="combo-badge">
+                <span>✨</span> x<span id="comboDisplay">0</span>
+            </div>
+        </div>
+
+        <div class="play-area">
+            <!-- Glass on the left -->
+            <div class="glass-wrap">
+                <div class="glass-label">FILL ME</div>
+                <div class="glass-pct" id="glassPct">0%</div>
+                <div class="glass-outer">
+                    <div class="glass-shine"></div>
+                    <div class="glass-liquid" id="glassLiquid">
+                        <div class="glass-bubbles" id="glassBubbles"></div>
+                        <div class="glass-surface"></div>
+                    </div>
+                    <div class="glass-rim-top"></div>
+                </div>
+                <div class="glass-base"></div>
+                <div class="glass-goal">🏆 FULL = WIN</div>
+            </div>
+
+            <canvas id="gameCanvas" width="480" height="480"></canvas>
+        </div>
+
+        <div class="gameover-message" id="gameoverMsg"></div>
+
+        <div class="action-bar">
+            <button id="restartButton">RESTART</button>
+            <button id="hintButton">HINT</button>
+        </div>
+        <!-- hidden daily button kept for JS compatibility -->
+        <button id="dailyButton" style="display:none"></button>
+        <!-- <div class="footer-note">🍋 swap · match · cascade · PRO MAX</div> -->
+    </div>
+
+    <!-- Ad overlay -->
+    <div id="adOverlay" class="ad-overlay hidden">
+        <div class="ad-content">
+            <div class="ad-title">📺 Watching Ad...</div>
+            <div class="progress-container">
+                <div id="adProgress" class="progress-bar"></div>
+            </div>
+            <div id="adStatus" class="ad-status">Loading ad...</div>
+        </div>
+    </div>
+
+    <!-- Result overlay (win / lose) -->
+    <div id="resultOverlay" class="result-overlay">
+        <div class="result-box">
+            <div class="result-icon" id="resultIcon">🏆</div>
+            <div class="result-title" id="resultTitle">YOU WIN!</div>
+            <div class="result-sub" id="resultSub">Glass filled in time!</div>
+            <button class="result-btn" id="resultBtn">▶ PLAY AGAIN</button>
+        </div>
+    </div>
+
+    <script defer src="script/utils.js"></script>
+    <script defer src="script/script-1.js"></script>
+
+</body>
+
+</html>
