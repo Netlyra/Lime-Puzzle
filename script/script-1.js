@@ -3,12 +3,12 @@
 
   const ROWS = 8;
   const COLS = 8;
-  const FRUIT_TYPES = 5;
+  const FRUIT_TYPES = 6;
   const BASE_TIME = 120;
   const LEVEL_SCORE_THRESHOLD = 250;
 
-  const FRUITS = ["🍋", "🍈", "🍊", "🍏", "🍐"];
-  const COLORS = ["#f9e45b", "#8bc34a", "#ffb347", "#a2d149", "#e8f48c"];
+  const FRUITS = ["🍎", "🍋", "🍈", "🍊", "🍐", "🍒"];
+  const COLORS = ["#ff6174", "#FFF000", "#078a42", "#E9692C", "#6db105", "#F12F3A"];
 
   const canvas = document.getElementById("gameCanvas");
   let ctx = canvas ? canvas.getContext("2d") : null;
@@ -40,6 +40,7 @@
   let timeLeft = BASE_TIME;
   let combo = 0;
   let gameActive = true;
+  let paused = false;
   let busy = false;
   let particles = [];
   let shakeIntensity = 0;
@@ -57,6 +58,8 @@
   let lastDaily = localStorage.getItem("limeLastDaily") || 0;
   let leaderboard = JSON.parse(localStorage.getItem("limeLeaderboard") || "[]");
   let timerInterval = null;
+  let rewardedAdsUsed = 0;           // limit rewarded ads per session
+  const MAX_REWARDED_ADS = 3;
   // Glass fill state
   const GLASS_MAX = 100;       // fruits needed to fill glass
   let glassLevel = 0;          // 0–100
@@ -347,22 +350,27 @@
     const outer = document.querySelector(".glass-outer");
     if (!liquid) return;
 
-    liquid.style.height = pct + "%";
+    const isMobile = window.innerWidth <= 480;
+    if (isMobile) {
+      liquid.style.width  = pct + "%";
+      liquid.style.height = "100%";
+    } else {
+      liquid.style.height = pct + "%";
+      liquid.style.width  = "100%";
+    }
+
     if (pctLabel) pctLabel.innerText = pct + "%";
 
-    // Color shift: green → yellow → gold as it fills
     if (pct >= 100) {
       liquid.classList.add("full");
       outer && outer.classList.add("full");
       if (pctLabel) pctLabel.style.color = "#facc15";
     } else if (pct > 60) {
-      liquid.style.background = `linear-gradient(180deg, #86efac 0%, #22c55e 60%, #16a34a 100%)`;
+      liquid.style.background = "linear-gradient(180deg, #86efac 0%, #22c55e 60%, #16a34a 100%)";
     }
 
-    // Spawn a bubble on each fill
     spawnGlassBubble();
 
-    // Win check
     if (glassLevel >= GLASS_MAX && gameActive) {
       showResult(true);
     }
@@ -412,6 +420,16 @@
 
     overlay.classList.add("show");
 
+    // Show/hide the "Watch Ad for Extra Life" button (only on loss, not win)
+    const resultAdBtn = document.getElementById("resultAdBtn");
+    if (resultAdBtn) {
+      if (!win && rewardedAdsUsed < MAX_REWARDED_ADS) {
+        resultAdBtn.style.display = "block";
+      } else {
+        resultAdBtn.style.display = "none";
+      }
+    }
+
     // Save leaderboard
     leaderboard.push({ name: "You", score, date: Date.now() });
     leaderboard.sort((a, b) => b.score - a.score);
@@ -434,7 +452,7 @@
   function startTimer() {
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(function () {
-      if (!gameActive) return;
+      if (!gameActive || paused) return;
       timeLeft--;
       if (timeLeft <= 0) {
         timeLeft = 0;
@@ -444,6 +462,13 @@
       }
       updateUI();
     }, 1000);
+  }
+
+  function togglePause() {
+    if (!gameActive) return;
+    paused = !paused;
+    const pauseBtn = document.getElementById("pauseButton");
+    if (pauseBtn) pauseBtn.innerText = paused ? "▶ RESUME" : "⏸ PAUSE";
   }
 
   function restartGame() {
@@ -457,16 +482,20 @@
     shakeIntensity = 0;
     selected = null;
     gameActive = true;
+    paused = false;
     busy = false;
+    rewardedAdsUsed = 0;  // reset ad count on full restart
     gameoverMsg.innerText = "";
     comboDisplay.innerText = "0";
+    const pauseBtn = document.getElementById("pauseButton");
+    if (pauseBtn) pauseBtn.innerText = "⏸ PAUSE";
 
     // Reset glass
     glassLevel = 0;
     const liquid = document.getElementById("glassLiquid");
     const pctLabel = document.getElementById("glassPct");
     const outer = document.querySelector(".glass-outer");
-    if (liquid) { liquid.style.height = "0%"; liquid.classList.remove("full"); liquid.style.background = ""; }
+    if (liquid) { liquid.style.height = "0%"; liquid.style.width = "0%"; liquid.classList.remove("full"); liquid.style.background = ""; }
     if (outer) outer.classList.remove("full");
     if (pctLabel) { pctLabel.innerText = "0%"; pctLabel.style.color = ""; }
 
@@ -522,6 +551,8 @@
 
   function drawBoard() {
     try {
+      if (!ctx || canvas.width <= 0 || canvas.height <= 0) return;
+
       if (shakeIntensity > 0) {
         ctx.save();
         ctx.translate(
@@ -531,8 +562,8 @@
       }
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Debug Grid
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+      // Subtle grid lines
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.06)";
       ctx.lineWidth = 1;
       for (let i = 0; i <= COLS; i++) {
         ctx.beginPath();
@@ -548,9 +579,11 @@
       }
 
       if (!board || board.length === 0) {
-         ctx.fillStyle = "red";
-         ctx.font = "20px Arial";
-         ctx.fillText("BOARD EMPTY", canvas.width/2, canvas.height/2);
+         ctx.fillStyle = "rgba(255,255,255,0.3)";
+         ctx.font = "bold 18px 'Inter', sans-serif";
+         ctx.textAlign = "center";
+         ctx.textBaseline = "middle";
+         ctx.fillText("Loading...", canvas.width / 2, canvas.height / 2);
          return;
       }
 
@@ -559,7 +592,7 @@
         for (let c = 0; c < COLS; c++) {
           const tile = board[r][c];
           if (!tile) continue;
-          
+
           if (typeof tile.x === 'undefined' || Number.isNaN(tile.x)) {
              tile.x = c * tileSize;
              tile.targetX = tile.x;
@@ -576,38 +609,63 @@
           const y = tile.y;
           const val = tile.val >= 0 ? tile.val : 0;
 
-          ctx.fillStyle = COLORS[val] || "white";
-          ctx.shadowColor = "#0f2a0a";
-          ctx.shadowBlur = 8;
+          // Colored tile background matching the fruit
+          const bgColor = COLORS[val] || "#444";
+          ctx.fillStyle = bgColor;
+          ctx.shadowColor = "rgba(0,0,0,0.35)";
+          ctx.shadowBlur = 6;
+          ctx.shadowOffsetY = 2;
           ctx.beginPath();
           drawRoundedRectPath(ctx, x + 2, y + 2, tileSize - 4, tileSize - 4, 10);
           ctx.fill();
+          ctx.shadowColor = "transparent";
           ctx.shadowBlur = 0;
+          ctx.shadowOffsetY = 0;
 
+          // Selection highlight glow
           if (selected && selected.r === r && selected.c === c) {
+            ctx.shadowColor = "#FFE484";
+            ctx.shadowBlur = 16;
             ctx.strokeStyle = "#FFE484";
-            ctx.lineWidth = 4;
+            ctx.lineWidth = 3;
             ctx.beginPath();
-            drawRoundedRectPath(ctx, x + 3, y + 3, tileSize - 6, tileSize - 6, 8);
+            drawRoundedRectPath(ctx, x + 4, y + 4, tileSize - 8, tileSize - 8, 8);
             ctx.stroke();
+            ctx.shadowBlur = 0;
           }
 
-          ctx.font =
-            "500 " +
-            Math.floor(tileSize * 0.55) +
-            "px 'Segoe UI Emoji', sans-serif";
+          // Draw fruit emoji on top of colored background
+          const emojiSize = Math.floor(tileSize * 0.68);
+          ctx.font = emojiSize + "px 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', sans-serif";
           ctx.textAlign = "center";
           ctx.textBaseline = "middle";
-          
+
           const fruitIcon = FRUITS[val] || "?";
-          ctx.fillStyle = "#1f2f0c";
-          ctx.fillText(fruitIcon, x + tileSize / 2 + 1, y + tileSize / 2 + 1);
-          ctx.fillStyle = "#faf7e1";
+          // Subtle drop shadow behind emoji
+          ctx.shadowColor = "rgba(0,0,0,0.35)";
+          ctx.shadowBlur = 6;
+          ctx.shadowOffsetX = 1;
+          ctx.shadowOffsetY = 2;
           ctx.fillText(fruitIcon, x + tileSize / 2, y + tileSize / 2);
+          ctx.shadowColor = "transparent";
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
         }
       }
       if (shakeIntensity > 0) ctx.restore();
       drawParticles();
+
+      // Paused overlay
+      if (paused) {
+        ctx.fillStyle = "rgba(10, 20, 40, 0.7)";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#fff";
+        ctx.font = "bold " + Math.floor(tileSize * 0.8) + "px 'Poppins', sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("⏸ PAUSED", canvas.width / 2, canvas.height / 2);
+      }
     } catch (e) {
       if (document.getElementById("gameoverMsg")) {
         document.getElementById("gameoverMsg").innerText = "Draw Error: " + e.message;
@@ -731,7 +789,7 @@
   }
 
   function handlePointerDown(e) {
-    if (!gameActive) return;
+    if (!gameActive || paused) return;
     e.preventDefault();
     initAudio();
     playSFX(clickAudio, 800); // tile click sound
@@ -756,17 +814,31 @@
   }
 
   function resizeCanvas() {
-    const glassWrap = document.querySelector(".glass-wrap");
-    const glassW = glassWrap ? glassWrap.offsetWidth + 16 : 86; // glass + gap
-    const container = canvas.parentElement ? canvas.parentElement.parentElement : document.body;
-    const containerWidth = (container ? container.clientWidth : 560) || 560;
-    const available = containerWidth - glassW - 48; // padding
-    const size = Math.max(240, Math.min(520, available));
-    canvas.style.width = size + "px";
+    const isMobile = window.innerWidth <= 480;
+    const container = canvas.closest(".game-container") || document.body;
+    const padX = isMobile ? 20 : 48;
+    // Compute gap from the actual rendered play-area element.
+    // The CSS variable uses clamp() so parseInt on it returns NaN;
+    // reading the computed gap property gives the resolved pixel value.
+    const playArea = document.querySelector(".play-area");
+    let computedGap = 12;
+    if (playArea) {
+      const g = parseFloat(getComputedStyle(playArea).gap);
+      if (isFinite(g)) computedGap = g;
+    }
+    const glassW = isMobile ? 0 : (document.querySelector(".glass-wrap")?.offsetWidth || 70) + computedGap;
+    const containerW = container.clientWidth || container.offsetWidth || window.innerWidth;
+    const available = containerW - padX - glassW;
+    let size = Math.floor(Math.max(220, Math.min(560, available)));
+    // Guard against NaN / zero — fall back to 480 (HTML attribute default)
+    if (!isFinite(size) || size <= 0) size = 480;
+    canvas.style.width  = size + "px";
     canvas.style.height = size + "px";
-    canvas.width = size;
+    canvas.width  = size;
     canvas.height = size;
     tileSize = size / COLS;
+    // Re-obtain context after canvas buffer resize
+    ctx = canvas.getContext("2d");
     if (board.length === ROWS) syncTargets();
   }
 
@@ -782,39 +854,84 @@
     const overlay = document.getElementById("adOverlay");
     const progress = document.getElementById("adProgress");
     const status = document.getElementById("adStatus");
+    const skipBtn = document.getElementById("adSkipBtn");
+
+    // Reset state
+    progress.style.width = "0%";
+    status.textContent = "Loading ad...";
+    if (skipBtn) skipBtn.style.display = "none";
 
     overlay.classList.remove("hidden");
     overlay.classList.add("show");
 
     let prog = 0;
+    let failed = false;
     const interval = setInterval(() => {
+      if (failed) return;
       prog += Math.random() * 8;
       if (prog > 100) prog = 100;
       progress.style.width = prog + "%";
 
       if (prog >= 100) {
         clearInterval(interval);
-        status.textContent = "Ad complete!";
+        status.textContent = "Ad complete! Reward earned ✓";
+        if (skipBtn) skipBtn.style.display = "inline-block";
+
         setTimeout(() => {
           overlay.classList.remove("show");
           overlay.classList.add("hidden");
+          if (skipBtn) skipBtn.style.display = "none";
           if (callback) callback(true); // reward
-        }, 1000);
+        }, 1500);
       }
     }, 80);
 
-    // Fake fail chance
+    // Fake fail chance (10%)
     if (Math.random() < 0.1) {
+      failed = true;
       setTimeout(() => {
         clearInterval(interval);
-        status.textContent = "Connection failed";
-        setTimeout(() => {
-          overlay.classList.remove("show");
-          overlay.classList.add("hidden");
-          if (callback) callback(false);
-        }, 1500);
+        status.textContent = "Ad unavailable. Try again later.";
+        if (skipBtn) {
+          skipBtn.style.display = "inline-block";
+          skipBtn.onclick = () => {
+            overlay.classList.remove("show");
+            overlay.classList.add("hidden");
+            skipBtn.style.display = "none";
+            if (callback) callback(false);
+          };
+        } else {
+          setTimeout(() => {
+            overlay.classList.remove("show");
+            overlay.classList.add("hidden");
+            if (callback) callback(false);
+          }, 1500);
+        }
       }, 2000);
     }
+  }
+
+  /** Grant an extra life: restore time and resume the game */
+  function grantExtraLife() {
+    rewardedAdsUsed++;
+    timeLeft = Math.min(999, timeLeft + 30);
+    gameActive = true;
+    paused = false;
+    busy = false;
+
+    // Hide result overlay
+    const overlay = document.getElementById("resultOverlay");
+    if (overlay) overlay.classList.remove("show");
+
+    coins += 100;
+    localStorage.setItem("limeCoins", coins);
+    gameoverMsg.innerText = "🎁 Extra Life! +30s +100💰";
+    setTimeout(() => (gameoverMsg.innerText = ""), 3000);
+
+    startTimer();
+    updateUI();
+    playSound(660, 0.1, "sine");
+    setTimeout(() => playSound(880, 0.08, "sine"), 120);
   }
 
   function initGame() {
@@ -870,6 +987,18 @@
     const resultBtn = document.getElementById("resultBtn");
     if (resultBtn) resultBtn.addEventListener("click", () => restartGame());
 
+    // Rewarded ad on game-over: "Watch Ad for Extra Life"
+    const resultAdBtn = document.getElementById("resultAdBtn");
+    if (resultAdBtn) {
+      resultAdBtn.addEventListener("click", () => {
+        watchAd((reward) => {
+          if (reward) {
+            grantExtraLife();
+          }
+        });
+      });
+    }
+
     if (muteButton) {
       muteButton.classList.toggle("muted", !soundEnabled);
       muteButton.addEventListener("click", toggleSound);
@@ -883,7 +1012,7 @@
 
     if (hintButton) {
       hintButton.addEventListener("click", function () {
-        if (!gameActive) return;
+        if (!gameActive || paused) return;
         const hint = findHintMove();
         if (hint) {
           selected = hint;
@@ -894,6 +1023,11 @@
           gameoverMsg.innerText = "No moves. Reshuffled!";
         }
       });
+    }
+
+    const pauseButton = document.getElementById("pauseButton");
+    if (pauseButton) {
+      pauseButton.addEventListener("click", togglePause);
     }
 
     // Coin buttons
