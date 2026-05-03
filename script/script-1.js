@@ -348,7 +348,21 @@
     const liquid = document.getElementById("glassLiquid");
     const pctLabel = document.getElementById("glassPct");
     const outer = document.querySelector(".glass-outer");
+    const wrap = document.querySelector(".glass-wrap");
+    const stream = document.getElementById("glassStream");
     if (!liquid) return;
+
+    // Trigger pouring animation with dynamic height
+    if (fruitsMatched > 0 && wrap && stream) {
+      // Stream height = 100% - current liquid %
+      stream.style.height = (100 - pct) + "%";
+      
+      wrap.classList.add("pouring");
+      clearTimeout(wrap._pourTimer);
+      wrap._pourTimer = setTimeout(() => {
+        wrap.classList.remove("pouring");
+      }, 800);
+    }
 
     const isMobile = window.innerWidth <= 480;
     if (isMobile) {
@@ -609,27 +623,30 @@
           const y = tile.y;
           const val = tile.val >= 0 ? tile.val : 0;
 
-          // Colored tile background matching the fruit
-          const bgColor = COLORS[val] || "#444";
-          ctx.fillStyle = bgColor;
-          ctx.shadowColor = "rgba(0,0,0,0.35)";
-          ctx.shadowBlur = 6;
-          ctx.shadowOffsetY = 2;
+          // Clean white tile background
+          const themeColor = COLORS[val] || "#cbd5e1";
+          ctx.fillStyle = "#ffffff";
+          ctx.shadowColor = "rgba(0,0,0,0.06)";
+          ctx.shadowBlur = 8;
+          ctx.shadowOffsetY = 3;
           ctx.beginPath();
-          drawRoundedRectPath(ctx, x + 2, y + 2, tileSize - 4, tileSize - 4, 10);
+          drawRoundedRectPath(ctx, x + 3, y + 3, tileSize - 6, tileSize - 6, 12);
           ctx.fill();
           ctx.shadowColor = "transparent";
-          ctx.shadowBlur = 0;
-          ctx.shadowOffsetY = 0;
+
+          // Colored border to keep the theme intact
+          ctx.strokeStyle = themeColor;
+          ctx.lineWidth = 2.5;
+          ctx.stroke();
 
           // Selection highlight glow
           if (selected && selected.r === r && selected.c === c) {
-            ctx.shadowColor = "#FFE484";
-            ctx.shadowBlur = 16;
-            ctx.strokeStyle = "#FFE484";
-            ctx.lineWidth = 3;
+            ctx.shadowColor = themeColor;
+            ctx.shadowBlur = 15;
+            ctx.strokeStyle = themeColor;
+            ctx.lineWidth = 4;
             ctx.beginPath();
-            drawRoundedRectPath(ctx, x + 4, y + 4, tileSize - 8, tileSize - 8, 8);
+            drawRoundedRectPath(ctx, x + 3, y + 3, tileSize - 6, tileSize - 6, 12);
             ctx.stroke();
             ctx.shadowBlur = 0;
           }
@@ -745,6 +762,13 @@
     drawBoard();
     requestAnimationFrame(animationLoop);
   }
+
+  window.addEventListener("resize", () => {
+    // Force a redraw if needed, though requestAnimationFrame handles it.
+    // We could adjust internal tileSize if we wanted dynamic resolution,
+    // but CSS handles the scaling fine for now.
+    updateUI(); 
+  });
 
   function toCellFromEvent(e) {
     const rect = canvas.getBoundingClientRect();
